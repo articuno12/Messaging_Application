@@ -8,9 +8,10 @@ class listener implements Runnable
 		private Socket clientB;
 		private DataInputStream is;
 		private DatagramSocket datagramSocket ;
-
+		private exc lock;
 		void receiveTCP(String filename)
 		{
+				lock.locked();
 				//	System.out.println("yoyo") ;
 				long filesize = 0;
 				try
@@ -57,11 +58,12 @@ class listener implements Runnable
 				{
 						System.err.println(e);
 				}
-				//System.out.println("finished writing") ;
+				lock.unlock();
 		}
 
 		void receiveUDP(String filename)
 		{
+				lock.locked();
 				long filesize = 0;
 				try
 				{
@@ -93,10 +95,8 @@ class listener implements Runnable
 								DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 								//datagramSocket.setSoTimeout(0) ;
 								datagramSocket.receive(packet) ;
-						//		System.out.println("waiting " + packet.getData());
 								remaining -= packet.getLength();
 								buffer = packet.getData();
-							//	System.out.println("pl" +  packet.getLength());
 								fos.write(buffer, 0, (int)packet.getLength());
 						}
 				}
@@ -104,7 +104,7 @@ class listener implements Runnable
 				{
 						System.err.println(e);
 				}
-
+				lock.unlock();
 		}
 
 		public void run()
@@ -140,13 +140,14 @@ class listener implements Runnable
 				}
 		}
 
-		public void start(Socket tempclientB)
+		public void start(Socket tempclientB, exc templock)
 		{
 				try
 				{
 						clientB = tempclientB;
 						is = new DataInputStream(clientB.getInputStream());
 						datagramSocket = new DatagramSocket(9876);
+						lock = templock;
 				}
 				catch (IOException e)
 				{
@@ -163,14 +164,15 @@ class sender implements Runnable
 		private DataOutputStream  os = null;
 		private Socket clientB ;
 		private BufferedReader keyRead = null;
-
-		public void start(Socket tempclientB)
+		private exc lock;
+		public void start(Socket tempclientB,exc templock)
 		{
 				try
 				{
 						clientB = tempclientB;
 						os = new DataOutputStream(clientB.getOutputStream());
 						keyRead = new BufferedReader(new InputStreamReader(System.in));
+						lock = templock;
 				}
 				catch (IOException e)
 				{
@@ -181,6 +183,7 @@ class sender implements Runnable
 
 		void sendTCP(String filename)
 		{
+				lock.locked();
 				FileInputStream fis = null;
 				try
 				{
@@ -215,10 +218,12 @@ class sender implements Runnable
 				{
 						System.err.println(e);
 				}
+				lock.unlock();
 		}
 
 		void sendUDP(String filename)
 		{
+				lock.locked();
 				DatagramSocket datagramSocket = null;
 				FileInputStream fis = null;
 				InetAddress receiverAddress = null;
@@ -262,7 +267,7 @@ class sender implements Runnable
 				{
 						System.err.println(e);
 				}
-
+				lock.unlock();
 		}
 
 		public void run()
@@ -300,12 +305,38 @@ class sender implements Runnable
 		}
 }
 
+class exc
+{
+    private boolean flag = false;
+    public synchronized void locked()
+    {
+        if(flag)
+        {
+            try
+            {
+                wait();
+            }
+            catch(InterruptedException e)
+            {
+                System.err.println(e);
+            }
+        }
+        flag = true;
+    }
+    public synchronized void unlock()
+    {
+        flag = false;
+        notify();
+    }
+}
+
 public class hostB
 {
 		public static void main(String args[])
 		{
 				ServerSocket Server = null;
 				Socket client = null;
+				exc lock = new exc();
 				try {
 						Server = new ServerSocket(9999);
 						client = Server.accept();
@@ -314,8 +345,8 @@ public class hostB
 						System.err.println(e);
 				}
 				listener mylistener = new listener();
-				mylistener.start(client);
+				mylistener.start(client,lock);
 				sender mysender = new sender();
-				mysender.start(client);
+				mysender.start(client,lock);
 		}
 }

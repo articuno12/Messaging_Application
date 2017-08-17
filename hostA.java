@@ -8,9 +8,10 @@ class listener implements Runnable
 		private Socket clientA;
 		private DataInputStream is;
     private DatagramSocket datagramSocket ;
-
+    private exc lock;
 		void receiveTCP(String filename)
 		{
+        lock.locked();
 				long filesize = 0;
 				try
 				{
@@ -56,10 +57,12 @@ class listener implements Runnable
 				{
 						System.err.println(e);
 				}
+        lock.unlock();
 		}
 
     void receiveUDP(String filename)
 		{
+        lock.locked();
 				long filesize = 0;
 				try
 				{
@@ -102,7 +105,7 @@ class listener implements Runnable
 				{
 						System.err.println(e);
 				}
-
+        lock.unlock();
 		}
 
 
@@ -138,13 +141,14 @@ class listener implements Runnable
 				}
 		}
 
-		public void start(Socket tempclientA)
+		public void start(Socket tempclientA,exc templock)
 		{
 				try
 				{
 						clientA = tempclientA;
 						is = new DataInputStream(clientA.getInputStream());
             datagramSocket = new DatagramSocket(9877);
+            lock = templock;
 				}
 				catch (IOException e)
 				{
@@ -161,14 +165,15 @@ class sender implements Runnable
 		private DataOutputStream os = null;
 		private Socket clientA ;
 		private BufferedReader keyRead = null;
-
-		public void start(Socket tempclientA)
+    private exc lock;
+		public void start(Socket tempclientA,exc templock)
 		{
 				try
 				{
 						clientA = tempclientA ;
 						os = new DataOutputStream(clientA.getOutputStream());
 						keyRead = new BufferedReader(new InputStreamReader(System.in));
+            lock = templock;
 				}
 				catch (IOException e)
 				{
@@ -179,6 +184,7 @@ class sender implements Runnable
 
 		void sendTCP(String filename)
 		{
+        lock.locked();
 				FileInputStream fis = null;
 				try
 				{
@@ -213,9 +219,11 @@ class sender implements Runnable
 				{
 						System.err.println(e);
 				}
+        lock.unlock();
 		}
 		void sendUDP(String filename)
 		{
+        lock.locked();
 				DatagramSocket datagramSocket = null;
 				FileInputStream fis = null;
 				InetAddress receiverAddress = null;
@@ -259,7 +267,7 @@ class sender implements Runnable
 				{
 						System.err.println(e);
 				}
-
+        lock.unlock();
 		}
 
 		public void run()
@@ -297,12 +305,38 @@ class sender implements Runnable
 		}
 }
 
+class exc
+{
+    private boolean flag = false;
+    public synchronized void locked()
+    {
+        if(flag)
+        {
+            try
+            {
+                wait();
+            }
+            catch(InterruptedException e)
+            {
+                System.err.println(e);
+            }
+        }
+        flag = true;
+    }
+    public synchronized void unlock()
+    {
+        flag = false;
+        notify();
+    }
+}
+
 public class hostA
 {
 		public static void main(String[] args)
 		{
 
 				Socket server = null;
+        exc lock = new exc();
 				try
 				{
 						server = new Socket("127.0.0.1", 9999);
@@ -316,8 +350,8 @@ public class hostA
 						System.err.println(e);
 				}
 				listener mylistener = new listener();
-				mylistener.start(server);
+				mylistener.start(server,lock);
 				sender mysender = new sender();
-				mysender.start(server);
+				mysender.start(server,lock);
 		}
 }
