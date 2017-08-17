@@ -10,7 +10,7 @@ class listener implements Runnable
 
 		void receiveTCP(String filename)
 		{
-			//	System.out.println("yoyo") ;
+				//	System.out.println("yoyo") ;
 				long filesize = 0;
 				try
 				{
@@ -19,16 +19,16 @@ class listener implements Runnable
 				}
 				catch (IOException e)
 				{
-						System.out.println(e);
+						System.err.println(e);
 				}
-				FileOutputStream fos = null ;
+				FileOutputStream fos = null;
 				try
 				{
 						fos = new FileOutputStream(filename);
 				}
 				catch (IOException e)
 				{
-						System.out.println(e);
+						System.err.println(e);
 				}
 				byte[] buffer = new byte[2048];
 				long read = 0;
@@ -46,7 +46,7 @@ class listener implements Runnable
 				}
 				catch (IOException e)
 				{
-						System.out.println(e);
+						System.err.println(e);
 				}
 				try
 				{
@@ -54,13 +54,56 @@ class listener implements Runnable
 				}
 				catch(Exception e)
 				{
-						System.out.println(e);
+						System.err.println(e);
 				}
 				//System.out.println("finished writing") ;
 		}
 
 		void receiveUDP(String filename)
 		{
+				long filesize = 0;
+				DatagramSocket datagramSocket = null;
+				try
+				{
+						filesize = is.readLong();
+						System.out.println("got size = "  +  filesize) ;
+				}
+				catch (IOException e)
+				{
+						System.err.println(e);
+				}
+				FileOutputStream fos = null ;
+				try
+				{
+						fos = new FileOutputStream(filename);
+						datagramSocket = new DatagramSocket();
+				}
+				catch (IOException e)
+				{
+						System.err.println(e);
+				}
+
+				int max_buffer = 65508/2;
+				byte[] buffer = new byte[max_buffer];
+				int read = 0;
+				int totalRead = 0;
+				long remaining = filesize;
+				try
+				{
+						while(remaining > 0)
+						{
+								DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+								datagramSocket.receive(packet);
+								remaining-=packet.getLength();
+								byte[] buffer2 = packet.getData();
+								fos.write(buffer2, 0, (int)packet.getLength());
+								System.out.println("here");
+						}
+				}
+				catch (IOException e)
+				{
+						System.err.println(e);
+				}
 
 		}
 
@@ -81,8 +124,8 @@ class listener implements Runnable
 										{
 												if(aStr[2] !=null && aStr[1]!=null)
 												{
-													if(aStr[2].indexOf("UDP")!=-1) receiveUDP(aStr[1]);
-													else if(aStr[2].indexOf("TCP")!=-1) receiveTCP(aStr[1]);
+														if(aStr[2].indexOf("UDP")!=-1) receiveUDP(aStr[1]);
+														else if(aStr[2].indexOf("TCP")!=-1) receiveTCP(aStr[1]);
 
 												}
 										}
@@ -93,7 +136,7 @@ class listener implements Runnable
 				}
 				catch (IOException e)
 				{
-						System.out.println(e);
+						System.err.println(e);
 				}
 		}
 
@@ -106,7 +149,7 @@ class listener implements Runnable
 				}
 				catch (IOException e)
 				{
-						System.out.println(e);
+						System.err.println(e);
 				}
 				new Thread(this,"hostB_listener").start() ;
 		}
@@ -130,7 +173,7 @@ class sender implements Runnable
 				}
 				catch (IOException e)
 				{
-						System.out.println(e);
+						System.err.println(e);
 				}
 				new Thread(this,"hostB_sender").start() ;
 		}
@@ -144,18 +187,18 @@ class sender implements Runnable
 				}
 				catch (IOException e)
 				{
-						System.out.println(e);
+						System.err.println(e);
 				}
 				long filesize = 0;
 				try
 				{
-					filesize = fis.getChannel().size();
-					os.writeLong(filesize);
-					os.flush();
+						filesize = fis.getChannel().size();
+						os.writeLong(filesize);
+						os.flush();
 				}
 				catch(IOException e)
 				{
-						System.out.println(e);
+						System.err.println(e);
 				}
 				byte[] buffer = new byte[2048];
 				try
@@ -169,12 +212,54 @@ class sender implements Runnable
 				}
 				catch(IOException e)
 				{
-						System.out.println(e);
+						System.err.println(e);
 				}
 		}
 
 		void sendUDP(String filename)
 		{
+				DatagramSocket datagramSocket = null;
+				FileInputStream fis = null;
+				InetAddress receiverAddress = null;
+				try
+				{
+						fis = new FileInputStream(filename);
+						datagramSocket = new DatagramSocket();
+						receiverAddress = InetAddress.getLocalHost();
+				}
+				catch (IOException e)
+				{
+						System.err.println(e);
+				}
+				long filesize = 0;
+				try
+				{
+						filesize = fis.getChannel().size();
+						os.writeLong(filesize);
+						os.flush();
+				}
+				catch(IOException e)
+				{
+						System.err.println(e);
+				}
+				int max_buffer = 65508/2;
+				byte[] buffer = new byte[max_buffer];
+				try
+				{
+						while (fis.read(buffer) > 0)
+						{
+								// os.write(buffer);
+								// os.flush();
+								DatagramPacket packet = new DatagramPacket(
+												buffer, buffer.length, receiverAddress, 9999);
+								datagramSocket.send(packet);
+						}
+						fis.close();
+				}
+				catch(IOException e)
+				{
+						System.err.println(e);
+				}
 
 		}
 
@@ -195,8 +280,8 @@ class sender implements Runnable
 										{
 												if(aStr[2] !=null && aStr[1]!=null)
 												{
-													if(aStr[2].indexOf("UDP")!=-1) sendUDP(aStr[1]);
-													else if(aStr[2].indexOf("TCP")!=-1) sendTCP(aStr[1]);
+														if(aStr[2].indexOf("UDP")!=-1) sendUDP(aStr[1]);
+														else if(aStr[2].indexOf("TCP")!=-1) sendTCP(aStr[1]);
 												}
 										}
 								}
@@ -224,7 +309,7 @@ public class hostB
 						client = Server.accept();
 				}
 				catch (IOException e) {
-						System.out.println(e);
+						System.err.println(e);
 				}
 				listener mylistener = new listener();
 				mylistener.start(client);
