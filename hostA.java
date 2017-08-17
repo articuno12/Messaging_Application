@@ -9,6 +9,16 @@ class listener implements Runnable
 		private DataInputStream is;
     private DatagramSocket datagramSocket ;
     private exc lock;
+
+    String showbar(int done,int total)
+    {
+      int percentp = (done * 10)/total;
+      String s = "";
+      for(int i=0;i<percentp;++i) s = s + "=";
+      for(int i=percentp;i<10;++i) s = s + ".";
+      s = s + "\r";
+      return s;
+    }
 		void receiveTCP(String filename)
 		{
         lock.locked();
@@ -36,12 +46,14 @@ class listener implements Runnable
 				long remaining = filesize;
 				try
 				{
+                System.out.println(">> Receiving ");
 						while((read = is.read(buffer, 0, (int)Math.min(buffer.length, remaining))) > 0)
 						{
 								totalRead += read;
 								remaining -= read;
 								//System.out.println("read " + totalRead + " bytes.");
 								fos.write(buffer, 0, (int)read);
+                System.out.write(showbar((int)totalRead,(int)filesize).getBytes());
 								//System.out.println("hereA");
 						}
 				}
@@ -88,17 +100,19 @@ class listener implements Runnable
 				long remaining = filesize;
 				try
 				{
+            System.out.println(">> Receiving");
 						while(remaining > 0)
 						{
 								byte[] buffer = new byte[max_buffer];
 								DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 								//datagramSocket.setSoTimeout(0) ;
 								datagramSocket.receive(packet) ;
-						//		System.out.println("waiting " + packet.getData());
+						    totalRead+=packet.getLength();
 								remaining -= packet.getLength();
 								buffer = packet.getData();
 							//	System.out.println("pl" +  packet.getLength());
 								fos.write(buffer, 0, (int)packet.getLength());
+                System.out.write(showbar((int)totalRead,(int)filesize).getBytes());
 						}
 				}
 				catch (IOException e)
@@ -181,7 +195,15 @@ class sender implements Runnable
 				}
 				new Thread(this,"hostA_sender").start() ;
 		}
-
+    String showbar(int done,int total)
+    {
+      int percentp = (done * 10)/total;
+      String s = "";
+      for(int i=0;i<percentp;++i) s = s + "=";
+      for(int i=percentp;i<10;++i) s = s + ".";
+      s = s + "\r";
+      return s;
+    }
 		void sendTCP(String filename)
 		{
         lock.locked();
@@ -206,12 +228,15 @@ class sender implements Runnable
 						System.err.println(e);
 				}
 				byte[] buffer = new byte[2048];
+        int done = 0;
 				try
 				{
 						while (fis.read(buffer) > 0)
 						{
 								os.write(buffer);
 								os.flush();
+                done+=buffer.length;
+								System.out.write(showbar(done,(int)filesize).getBytes());
 						}
 						fis.close();
 				}
@@ -250,15 +275,18 @@ class sender implements Runnable
 						System.err.println(e);
 				}
 				int max_buffer = 1024 ;
+        int done =0;
 				byte[] buffer = new byte[max_buffer];
 				try
 				{
+            System.out.println(">> Sending");
 						while (fis.read(buffer) > 0)
 						{
 								DatagramPacket packet = new DatagramPacket(
 												buffer, buffer.length, receiverAddress, 9876);
 								datagramSocket.send(packet);
-
+                done+=buffer.length;
+                System.out.write(showbar(done,(int)filesize).getBytes());
 						}
 						fis.close();
             datagramSocket.close() ;
