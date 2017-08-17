@@ -16,6 +16,7 @@ class listener implements Runnable
       for(int i=0;i<percentp;++i) s = s + "=";
       for(int i=percentp;i<10;++i) s = s + ".";
       s = s + "\r";
+			if(done>=total) s = "Received!\n";
       return s;
     }
 		void receiveTCP(String filename)
@@ -131,7 +132,8 @@ class listener implements Runnable
 								if((rmessage = is.readUTF()) != null) //receive from hostA
 								{
 										if(rmessage.isEmpty()) continue ;
-										System.out.println(">> " + rmessage); // displaying at DOS prompt
+										System.out.println(">>");
+										System.out.println("hostA: " + rmessage); // displaying at DOS prompt
 										System.out.flush() ;
 										String [] aStr = rmessage.split(" ");
 										if(aStr[0].indexOf("Sending")!=-1)
@@ -186,6 +188,7 @@ class sender implements Runnable
       for(int i=0;i<percentp;++i) s = s + "=";
       for(int i=percentp;i<10;++i) s = s + ".";
       s = s + "\r";
+			if(done>=total) s = "SENT!\n";
       return s;
     }
 		public void start(Socket tempclientB,exc templock)

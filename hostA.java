@@ -14,9 +14,12 @@ class listener implements Runnable
     {
       int percentp = (done * 10)/total;
       String s = "";
+      s = s + "[";
       for(int i=0;i<percentp;++i) s = s + "=";
       for(int i=percentp;i<10;++i) s = s + ".";
+      s+= "] " + (10*percentp) + "%" ;
       s = s + "\r";
+      if(done>=total) s = "Received!\n";
       return s;
     }
 		void receiveTCP(String filename)
@@ -133,7 +136,8 @@ class listener implements Runnable
 								if((rmessage = is.readUTF()) != null) //receive from hostA
 								{
 										if(rmessage.isEmpty()) continue ;
-										System.out.println(">>" + rmessage); // displaying at DOS prompt
+                    System.out.println(">>");
+										System.out.println("hostB: " + rmessage);
 										System.out.flush() ;
 										String [] aStr = rmessage.split(" ");
 										if(aStr[0].indexOf("Sending")!=-1)
@@ -202,6 +206,7 @@ class sender implements Runnable
       for(int i=0;i<percentp;++i) s = s + "=";
       for(int i=percentp;i<10;++i) s = s + ".";
       s = s + "\r";
+      if(done>=total) s = "SENT!\n";
       return s;
     }
 		void sendTCP(String filename)
@@ -309,7 +314,7 @@ class sender implements Runnable
 								if(smessage!=null)
 								{
 										os.writeUTF(smessage);
-										os.flush();       // sending to server
+										os.flush();
 										String [] aStr = smessage.split(" ");
 										if(aStr[0].indexOf("Sending")!=-1)
 										{
