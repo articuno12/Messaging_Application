@@ -6,7 +6,6 @@ class listener implements Runnable
 {
 
 		private Socket clientA;
-		private BufferedReader keyRead;
 		private DataInputStream is;
 
 		void receiveTCP(String filename)
@@ -39,8 +38,9 @@ class listener implements Runnable
 						{
 								totalRead += read;
 								remaining -= read;
-								System.out.println("read " + totalRead + " bytes.");
+								//System.out.println("read " + totalRead + " bytes.");
 								fos.write(buffer, 0, (int)read);
+                //System.out.println("hereA");
 						}
 				}
 				catch (IOException e)
@@ -71,15 +71,16 @@ class listener implements Runnable
 						{
 								if((rmessage = is.readUTF()) != null) //receive from hostA
 								{
+                    if(rmessage.isEmpty()) continue ;
 										System.out.println(">>" + rmessage); // displaying at DOS prompt
 										System.out.flush() ;
 										String [] aStr = rmessage.split(" ");
-										if(aStr[0]=="Sending")
+										if(aStr[0].indexOf("Sending")!=-1)
 										{
 												if(aStr[2] !=null && aStr[1]!=null)
 												{
-														if(aStr[2]=="UDP") receiveUDP(aStr[1]);
-														else if(aStr[2]=="TCP") receiveTCP(aStr[1]);
+														if(aStr[2].indexOf("UDP")!=-1) receiveUDP(aStr[1]);
+														else if(aStr[2].indexOf("TCP")!=-1) receiveTCP(aStr[1]);
 												}
 										}
 								}
@@ -140,13 +141,14 @@ class sender implements Runnable
 				}
 				catch (IOException e)
 				{
-						System.out.println(e);
+						System.err.println(e);
 				}
 				long filesize = 0;
 				try
 				{
 						filesize = fis.getChannel().size();
 						os.writeLong(filesize);
+            os.flush();
 				}
 				catch(IOException e)
 				{
@@ -158,6 +160,7 @@ class sender implements Runnable
 						while (fis.read(buffer) > 0)
 						{
 								os.write(buffer);
+                os.flush();
 						}
 						fis.close();
 				}
@@ -185,12 +188,12 @@ class sender implements Runnable
 										os.writeUTF(smessage);
 										os.flush();       // sending to server
 										String [] aStr = smessage.split(" ");
-										if(aStr[0]=="Sending")
+										if(aStr[0].indexOf("Sending")!=-1)
 										{
 												if(aStr[2] !=null && aStr[1]!=null)
 												{
-														if(aStr[2]=="UDP") sendUDP(aStr[1]);
-														else if(aStr[2]=="TCP") sendTCP(aStr[1]);
+														if(aStr[2].indexOf("UDP")!=-1) sendUDP(aStr[1]);
+														else if(aStr[2].indexOf("TCP")!=-1) sendTCP(aStr[1]);
 												}
 										}
 								}
