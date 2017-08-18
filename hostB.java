@@ -13,10 +13,12 @@ class listener implements Runnable
     {
       int percentp = (done * 10)/total;
       String s = "";
+			s = s + "[";
       for(int i=0;i<percentp;++i) s = s + "=";
       for(int i=percentp;i<10;++i) s = s + ".";
+			s+= "] " + (10*percentp) + "%" ;
       s = s + "\r";
-			if(done>=total) s = "Received!\n";
+			//if(done>=total) s = "Received!\n";
       return s;
     }
 		void receiveTCP(String filename)
@@ -48,7 +50,7 @@ class listener implements Runnable
 				long remaining = filesize;
 				try
 				{
-						System.out.println(">> Receiving ");
+						System.out.println("Receiving ");
 						while((read = is.read(buffer, 0, (int)Math.min(buffer.length, remaining))) > 0)
 						{
 								totalRead += read;
@@ -101,7 +103,7 @@ class listener implements Runnable
 				long remaining = filesize;
 				try
 				{
-						System.out.println(">> Receiving");
+						System.out.println("Receiving");
 						while(remaining > 0)
 						{
 								byte[] buffer = new byte[max_buffer];
@@ -185,10 +187,12 @@ class sender implements Runnable
     {
       int percentp = (done * 10)/total;
       String s = "";
+			s = s + "[";
       for(int i=0;i<percentp;++i) s = s + "=";
       for(int i=percentp;i<10;++i) s = s + ".";
+			s+= "] " + (10*percentp) + "%" ;
       s = s + "\r";
-			if(done>=total) s = "SENT!\n";
+			//if(done>=total) s = "SENT!\n";
       return s;
     }
 		public void start(Socket tempclientB,exc templock)
@@ -234,7 +238,7 @@ class sender implements Runnable
 				int done = 0;
 				try
 				{
-						System.out.println(">> Sending");
+						System.out.println("Sending");
 						while (fis.read(buffer) > 0)
 						{
 								os.write(buffer);
@@ -284,7 +288,7 @@ class sender implements Runnable
 				byte[] buffer = new byte[max_buffer];
 				try
 				{
-						System.out.println(">> Sending");
+						System.out.println("Sending");
 						while (fis.read(buffer) > 0)
 						{
 								DatagramPacket packet = new DatagramPacket(
