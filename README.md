@@ -13,7 +13,9 @@ In this application, hostA is client and hostB is server. They communicate throu
 * To run:<br>
 `java hostA` <br>
 `java hostB`<br>
-
+* To send files: <br>
+Using UDP: `Sending filename_with_path UDP` <br>
+Using TCP: `Sending filename_with_path TCP` <br>
 ##### Note: Run hostA and hostB files in different directories
 
  
