@@ -13,6 +13,7 @@ class listener implements Runnable
 	String showbar(long done,long total)
 	{
 		int percentp = (int)((done * 10)/total);
+		percentp = Math.min(percentp,10) ;
 		String s = "Importing : ";
 		s = s + "[";
 		for(int i=0;i<percentp;++i) s = s + "=";
@@ -55,7 +56,7 @@ class listener implements Runnable
 					while(remaining>0)
 					{
 						read = is.read(buffer) ;
-						read = (int)Math.min((long)buffer.length,remaining) ;
+						read = Math.min((long)buffer.length,remaining) ;
 						if(read <= 0) break ;
 						totalRead += read;
 						remaining -= read;
@@ -104,8 +105,8 @@ class listener implements Runnable
 			}
 
 			int max_buffer = 2048 ;
-			int read = 0;
-			int totalRead = 0;
+			long read = 0;
+			long totalRead = 0;
 			long remaining = filesize;
 			try
 			{
@@ -120,7 +121,7 @@ class listener implements Runnable
 							totalRead += packet.getLength();
 							buffer = packet.getData();
 							fos.write(buffer, 0, (int)packet.getLength());
-							  System.out.write(showbar((int)totalRead,(int)filesize).getBytes());
+							  System.out.write(showbar(totalRead,filesize).getBytes());
 					}
 					System.out.println("") ;
 					System.out.write(">> ".getBytes()) ;
@@ -288,7 +289,7 @@ class sender implements Runnable
 						System.err.println(e);
 				}
 				int max_buffer = 1024 ;
-        int done =0;
+        	long done =0;
 				byte[] buffer = new byte[max_buffer];
 				try
 				{
